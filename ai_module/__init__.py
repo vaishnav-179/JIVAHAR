@@ -4,4 +4,8 @@
 # RAG querying, and CNN food classification to the Flask backend application.
 # ==============================================================================
 
-# Facade exports will be populated as we implement each module.
+from ai_module.integrated_pipeline import IntegratedDonationPipeline
+
+__all__ = [
+    "IntegratedDonationPipeline"
+]
