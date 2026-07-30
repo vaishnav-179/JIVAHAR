@@ -1,0 +1,135 @@
+import logging
+from typing import Optional
+from google import genai
+from google.genai import types
+from google.genai.errors import APIError
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+
+from config.settings import settings
+
+logger = logging.getLogger(__name__)
+
+class GemmaError(Exception):
+    """Base exception for all Gemma service errors."""
+    pass
+
+class GemmaConfigurationError(GemmaError):
+    """Raised when the configuration is invalid or missing."""
+    pass
+
+class GemmaAPIError(GemmaError):
+    """Raised when the Google GenAI API returns an error."""
+    pass
+
+class GemmaService:
+    """
+    Service class to handle communications with Google AI Studio (Gemini/Gemma API).
+    Provides robust text generation with automatic retries and structured error handling.
+    """
+    
+    def __init__(self):
+        self.api_key = settings.GEMINI_API_KEY
+        self.model_name = settings.GEMINI_MODEL
+        
+        # Guard warning for unconfigured API keys during initialization
+        if not self.api_key or self.api_key == "mock_key_for_testing":
+            logger.warning(
+                "GEMINI_API_KEY is not configured with a valid production key. "
+                "API calls will fail until a valid key is set in .env."
+            )
+            
+        try:
+            # Initialize the modern Google GenAI Client
+            self.client = genai.Client(api_key=self.api_key)
+        except Exception as e:
+            logger.error(f"Failed to initialize GenAI Client: {e}")
+            raise GemmaConfigurationError(f"Client initialization failed: {e}")
+
+    @retry(
+        reraise=True,
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(APIError)
+    )
+    def _call_api_with_retry(
+        self, 
+        prompt: str, 
+        system_instruction: Optional[str], 
+        temperature: float, 
+        max_output_tokens: Optional[int]
+    ):
+        """
+        Internal helper method wrapped with tenacity to handle network retries 
+        on transient API connection failures or rate-limiting.
+        """
+        # Configure generation parameters dynamically
+        config_args = {"temperature": temperature}
+        if system_instruction:
+            config_args["system_instruction"] = system_instruction
+        if max_output_tokens:
+            config_args["max_output_tokens"] = max_output_tokens
+
+        config = types.GenerateContentConfig(**config_args)
+        
+        logger.debug(f"Sending prompt to model {self.model_name} (temp={temperature})...")
+        
+        # Modern client call structure
+        response = self.client.models.generate_content(
+            model=self.model_name,
+            contents=prompt,
+            config=config
+        )
+        return response
+
+    def generate_response(
+        self,
+        prompt: str,
+        system_instruction: Optional[str] = None,
+        temperature: float = 0.2,
+        max_output_tokens: Optional[int] = None
+    ) -> str:
+        """
+        Generates a natural language response from the Gemma/Gemini model.
+        
+        Args:
+            prompt: The user input prompt.
+            system_instruction: Optional system rules to guide the model's behavior.
+            temperature: Controls randomness (0.0 is deterministic, 1.0 is creative).
+            max_output_tokens: Optional limit on response length.
+            
+        Returns:
+            The generated text response.
+            
+        Raises:
+            GemmaConfigurationError: If configurations are invalid or mock keys are used.
+            GemmaAPIError: If the API returns an error or fails after retries.
+        """
+        if not prompt or not prompt.strip():
+            raise ValueError("Prompt cannot be empty.")
+
+        # Fail-fast validation if still configured with default placeholder
+        if self.api_key == "mock_key_for_testing":
+            raise GemmaConfigurationError(
+                "Cannot perform API operations with a mock API key. "
+                "Please configure a valid GEMINI_API_KEY in your local .env file."
+            )
+
+        try:
+            response = self._call_api_with_retry(
+                prompt=prompt,
+                system_instruction=system_instruction,
+                temperature=temperature,
+                max_output_tokens=max_output_tokens
+            )
+            
+            if not response or not response.text:
+                raise GemmaAPIError("Received an empty response from the AI API.")
+                
+            return response.text
+            
+        except APIError as api_err:
+            logger.error(f"Google GenAI API Error: {api_err}")
+            raise GemmaAPIError(f"API Error occurred: {api_err.message} (Code: {api_err.code})") from api_err
+        except Exception as e:
+            logger.error(f"Unexpected error in Gemma service: {e}")
+            raise GemmaAPIError(f"An unexpected error occurred during generation: {e}") from e
