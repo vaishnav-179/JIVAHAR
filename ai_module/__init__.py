@@ -5,7 +5,9 @@
 # ==============================================================================
 
 from ai_module.integrated_pipeline import IntegratedDonationPipeline
+from ai_module.facade import JivaharAIFacade
 
 __all__ = [
-    "IntegratedDonationPipeline"
+    "IntegratedDonationPipeline",
+    "JivaharAIFacade"
 ]
