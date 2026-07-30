@@ -6,6 +6,7 @@ from ai_module.gemma.gemma_service import (
 )
 from ai_module.gemma.summary_generator import DonationSummaryGenerator
 from ai_module.gemma.notification_generator import NotificationGenerator
+from ai_module.gemma.match_explainer import NGORecommendationExplainer
 
 __all__ = [
     "GemmaService", 
@@ -13,5 +14,6 @@ __all__ = [
     "GemmaConfigurationError", 
     "GemmaAPIError",
     "DonationSummaryGenerator",
-    "NotificationGenerator"
+    "NotificationGenerator",
+    "NGORecommendationExplainer"
 ]
