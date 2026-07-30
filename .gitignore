@@ -1,0 +1,31 @@
+# Virtual Environment
+.venv/
+venv/
+ENV/
+
+# Configuration and Secrets
+.env
+.env.local
+
+# Python Cache and Compiled Files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editor / IDE settings
+.vscode/
+.idea/
+.qodo/
+
+# Project Specific Large Files
+# best_model.pth (Optional: usually neural network weights are tracked via LFS or hosted elsewhere.
+# However, if this repo needs to contain it, we can keep it untracked or tracked. Let's keep it tracked
+# for this run since the backend will need to find it directly, unless it's too large for standard Git.
+# Note: GitHub has a 100MB file limit. Our model is 131MB! If we push it to standard GitHub without LFS,
+# GitHub will reject the push. Let's exclude best_model.pth from Git or mention this to the user.
+# Let's add best_model.pth to gitignore to prevent the push from failing due to GitHub's 100MB file limit.)
+best_model.pth

@@ -1,0 +1,16 @@
+# AI/ML Core Dependencies
+google-genai>=0.1.1
+python-dotenv>=1.0.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# CNN Model & Image Processing Dependencies
+torch>=2.0.0
+torchvision>=0.15.0
+pillow>=10.0.0
+numpy>=1.24.0
+
+# RAG & Vector Database Dependencies
+faiss-cpu>=1.7.4
+sentence-transformers>=2.2.2
+pypdf>=3.17.0
