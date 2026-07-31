@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jivahar AI Sandbox - Gemma & CNN Classifier</title>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Main Style Sheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Marked Markdown Parser -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- Sidebar Shell -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-brain"></i>
+                </div>
+                <h1 class="logo-text">NEONEXUS</h1>
+                <span class="logo-badge">SANDBOX</span>
+            </div>
+            
+            <nav class="nav-menu">
+                <li class="nav-item active" data-tab="gemma-tab">
+                    <button type="button" id="btn-tab-gemma">
+                        <i class="fa-solid fa-microchip"></i> Gemma Sandbox
+                    </button>
+                </li>
+                <li class="nav-item" data-tab="cnn-tab">
+                    <button type="button" id="btn-tab-cnn">
+                        <i class="fa-solid fa-image"></i> CNN Food Classifier
+                    </button>
+                </li>
+                <li class="nav-item" data-tab="pipeline-tab">
+                    <button type="button" id="btn-tab-pipeline">
+                        <i class="fa-solid fa-arrows-spin"></i> Redistribution Pipeline
+                    </button>
+                </li>
+                <li class="nav-item" data-tab="recommendation-tab">
+                    <button type="button" id="btn-tab-recommendation">
+                        <i class="fa-solid fa-handshake-angle"></i> NGO Recommendation
+                    </button>
+                </li>
+                <li class="nav-item" data-tab="chatbot-tab">
+                    <button type="button" id="btn-tab-chatbot">
+                        <i class="fa-solid fa-comments"></i> RAG Chatbot
+                    </button>
+                </li>
+                <li class="nav-item" data-tab="settings-tab">
+                    <button type="button" id="btn-tab-settings">
+                        <i class="fa-solid fa-sliders"></i> System Settings
+                    </button>
+                </li>
+            </nav>
+            
+            <!-- Connection Status indicator -->
+            <div class="status-card">
+                <div class="status-header">
+                    <span>SYSTEM INTEGRITY</span>
+                    <span id="system-status-dot" class="status-dot"></span>
+                </div>
+                <div class="status-info">
+                    <div class="status-row">
+                        <span class="status-label">Flask:</span>
+                        <span class="status-value" id="status-flask-val">Connecting...</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Gemini API:</span>
+                        <span class="status-value" id="status-api-val">Pending</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">CNN Weights:</span>
+                        <span class="status-value" id="status-cnn-val">Pending</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">FAISS Store:</span>
+                        <span class="status-value" id="status-faiss-val">Pending</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Dashboard Body -->
+        <main class="main-content">
+            
+            <!-- Status Alerts Banner Container -->
+            <div id="app-alerts-container"></div>
+
+            <!-- Tab 1: Gemma Sandbox -->
+            <section id="gemma-tab" class="tab-panel active">
+                <div class="header-container">
+                    <h2 class="header-title">Gemma LLM Sandbox</h2>
+                    <p class="header-subtitle">Directly query and benchmark Gemma models with customized hyperparameters.</p>
+                </div>
+                
+                <div class="grid-2">
+                    <!-- Config Form Card -->
+                    <div class="glass-card">
+                        <h3 class="card-title"><i class="fa-solid fa-gear"></i> Sandbox Configuration</h3>
+                        
+                        <div class="form-group">
+                            <label for="gemma-backend-select">Backend Provider</label>
+                            <select id="gemma-backend-select" onchange="onBackendChange('gemma')">
+                                <option value="gemini" selected>Google Gemini API (Cloud)</option>
+                                <option value="ollama">Ollama (Local Engine)</option>
+                                <option value="huggingface">Hugging Face API (Cloud)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="gemma-model-select">LLM Model</label>
+                            <select id="gemma-model-select" onchange="onModelChange('gemma')">
+                                <option value="gemini-flash-latest" selected>Gemini Flash (Latest - Default)</option>
+                                <option value="gemini-2.0-flash">Gemini 2.0 Flash (Latest)</option>
+                                <option value="gemma-4-26b-a4b-it">Gemma 4 26B (Instruct - AI Studio)</option>
+                                <option value="gemma-4-31b-it">Gemma 4 31B (Instruct - AI Studio)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" id="gemma-custom-model-group" style="display: none;">
+                            <label for="gemma-custom-model-input">Custom Model Name / ID</label>
+                            <input type="text" id="gemma-custom-model-input" placeholder="e.g. gemma2:9b or google/gemma-2-9b-it">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="gemma-temp-slider">Temperature (Creativity)</label>
+                            <div class="range-container">
+                                <input type="range" id="gemma-temp-slider" min="0.0" max="1.0" step="0.05" value="0.2">
+                                <span id="gemma-temp-val" class="range-val">0.2</span>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="gemma-tokens-input">Max Output Tokens</label>
+                            <input type="number" id="gemma-tokens-input" placeholder="e.g. 1024 (Default is model max)" min="1" max="8192">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="gemma-sys-instructions">System Instruction</label>
+                            <textarea id="gemma-sys-instructions" rows="4" placeholder="You are a helpful, professional AI redistributor..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- Sandbox Prompt/Execution Card -->
+                    <div class="glass-card">
+                        <h3 class="card-title"><i class="fa-solid fa-terminal"></i> Model Prompting</h3>
+                        
+                        <div class="form-group" style="flex-grow: 1; display: flex; flex-direction: column;">
+                            <label for="gemma-prompt-input">Input Prompt</label>
+                            <textarea id="gemma-prompt-input" style="flex-grow: 1; min-height: 120px;" placeholder="Type your prompt here or select a preset below..."></textarea>
+                        </div>
+                        
+                        <label>Suggested Presets</label>
+                        <div class="presets-container">
+                            <span class="preset-chip" onclick="loadGemmaPreset('summarize')">Redistribution Log Summary</span>
+                            <span class="preset-chip" onclick="loadGemmaPreset('safety')">Cold Storage Food Advice</span>
+                            <span class="preset-chip" onclick="loadGemmaPreset('creative')">Write Volunteer Call To Action</span>
+                        </div>
+                        
+                        <button type="button" class="btn" id="gemma-submit-btn">
+                            <i class="fa-solid fa-paper-plane"></i> Run Prompt Generation
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Results Output Display Card -->
+                <div class="glass-card" style="margin-top: 1.5rem; flex-grow: 1;">
+                    <div class="output-header">
+                        <h3 class="card-title"><i class="fa-solid fa-file-invoice"></i> Output Response</h3>
+                        <div class="output-meta" id="gemma-output-meta"></div>
+                    </div>
+                    <div class="output-container empty" id="gemma-output-box">
+                        Generated response will render here in formatted Markdown...
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 2: CNN Food Classifier -->
+            <section id="cnn-tab" class="tab-panel">
+                <div class="header-container">
+                    <h2 class="header-title">CNN Food Classifier Sandbox</h2>
+                    <p class="header-subtitle">Upload food photos to execute classification inference on the pre-trained EfficientNet-B3 model.</p>
+                </div>
+                
+                <div class="grid-2">
+                    <!-- Upload Card -->
+                    <div class="glass-card">
+                        <h3 class="card-title"><i class="fa-solid fa-cloud-arrow-up"></i> Photo Upload Zone</h3>
+                        
+                        <div class="upload-zone" id="cnn-upload-zone">
+                            <i class="fa-regular fa-image"></i>
+                            <p>Drag & drop food photo here or click to select</p>
+                            <span>Supports JPG, JPEG, PNG</span>
+                            <input type="file" id="cnn-file-input" accept="image/*" style="display: none;">
+                        </div>
+                        
+                        <div class="preview-container" id="cnn-preview-container">
+                            <img id="cnn-img-preview" src="" alt="Image preview">
+                            <div class="preview-remove" id="cnn-preview-remove"><i class="fa-solid fa-times"></i></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Classification Results -->
+                    <div class="glass-card">
+                        <h3 class="card-title"><i class="fa-solid fa-circle-info"></i> Classification Predictions</h3>
+                        
+                        <div id="cnn-status-empty" style="text-align: center; color: var(--text-muted); font-style: italic; margin: auto 0;">
+                            Upload a photo and click "Classify Food" to begin inference...
+                        </div>
+                        
+                        <div id="cnn-result-box" style="display: none; height: 100%;">
+                            <div class="prediction-gauge-container">
+                                <div class="prediction-details">
+                                    <label>Predicted Class Name</label>
+                                    <div class="predicted-label" id="cnn-pred-label">Lassi</div>
+                                    <label style="margin-top: 1rem;">Model Confidence</label>
+                                    <div class="confidence-bar-outer">
+                                        <div class="confidence-bar-inner" id="cnn-confidence-bar"></div>
+                                    </div>
+                                    <span class="confidence-text" id="cnn-confidence-text">98.54%</span>
+                                </div>
+                            </div>
+                            <div class="output-meta" id="cnn-output-meta" style="margin-top: auto; border-top: 1px solid var(--border-color); padding-top: 1rem;"></div>
+                        </div>
+                        
+                        <button type="button" class="btn" id="cnn-submit-btn" disabled style="margin-top: 1.5rem;">
+                            <i class="fa-solid fa-bolt"></i> Classify Food Image
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 3: Redistribution Pipeline -->
+            <section id="pipeline-tab" class="tab-panel">
+                <div class="header-container">
+                    <h2 class="header-title">End-to-End Redistribution Pipeline</h2>
+                    <p class="header-subtitle">Evaluate the complete workflow: Classify food photo, generate log description, and fetch RAG safety regulations.</p>
+                </div>
+                
+                <div class="grid-2">
+                    <!-- Form Metadata Card -->
+                    <div class="glass-card">
+                        <h3 class="card-title"><i class="fa-solid fa-clipboard-list"></i> Donation Information</h3>
+                        
+                        <div class="upload-zone" id="pipe-upload-zone">
+                            <i class="fa-solid fa-camera"></i>
+                            <p>Upload a food image to classify</p>
+                            <span>Required for pipeline processing</span>
+                            <input type="file" id="pipe-file-input" accept="image/*" style="display: none;">
+                        </div>
+                        
+                        <div class="preview-container" id="pipe-preview-container">
+                            <img id="pipe-img-preview" src="" alt="Image preview">
+                            <div class="preview-remove" id="pipe-preview-remove"><i class="fa-solid fa-times"></i></div>
+                        </div>
+                        
+                        <div class="grid-2" style="margin-top: 1rem; grid-template-columns: 1fr 1fr;">
+                            <div class="form-group">
+                                <label for="pipe-quantity">Quantity / Volume</label>
+                                <input type="text" id="pipe-quantity" placeholder="e.g. 15 Portions, 5 kg" value="10 portions">
+                            </div>
+                            <div class="form-group">
+                                <label for="pipe-prep-time">Prepared Time</label>
+                                <input type="text" id="pipe-prep-time" placeholder="e.g. 2 hours ago, 10:00 AM" value="2 hours ago">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="pipe-storage">Storage Condition</label>
+                            <select id="pipe-storage">
+                                <option value="Refrigerated (under 5°C)" selected>Refrigerated (under 5°C)</option>
+                                <option value="Room Temperature">Room Temperature</option>
+                                <option value="Frozen (under -18°C)">Frozen (under -18°C)</option>
+                                <option value="Hot-held (above 60°C)">Hot-held (above 60°C)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="pipe-backend-select">Backend Provider</label>
+                            <select id="pipe-backend-select" onchange="onBackendChange('pipe')">
+                                <option value="gemini" selected>Google Gemini API (Cloud)</option>
+                                <option value="ollama">Ollama (Local Engine)</option>
+                                <option value="huggingface">Hugging Face API (Cloud)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="pipe-model-select">Gemma LLM Model Override</label>
+                            <select id="pipe-model-select" onchange="onModelChange('pipe')">
+                                <option value="gemini-flash-latest" selected>Gemini Flash (Default)</option>
+                                <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                                <option value="gemma-4-26b-a4b-it">Gemma 4 26B</option>
+                                <option value="gemma-4-31b-it">Gemma 4 31B</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" id="pipe-custom-model-group" style="display: none;">
+                            <label for="pipe-custom-model-input">Custom Model Name / ID</label>
+                            <input type="text" id="pipe-custom-model-input" placeholder="e.g. gemma2:2b or google/gemma-2-2b-it">
+                        </div>
+                        
+                        <button type="button" class="btn" id="pipe-submit-btn" disabled>
+                            <i class="fa-solid fa-circle-play"></i> Run Redistribution Pipeline
+                        </button>
+                    </div>
+                    
+                    <!-- Outputs Card -->
+                    <div class="glass-card" style="min-height: 500px;">
+                        <h3 class="card-title"><i class="fa-solid fa-rectangle-list"></i> Pipeline Payload Outputs</h3>
+                        
+                        <div id="pipe-status-empty" style="text-align: center; color: var(--text-muted); font-style: italic; margin: auto 0;">
+                            Fill out the details, upload a photo, and execute the pipeline to inspect results...
+                        </div>
+                        
+                        <div id="pipe-results-box" style="display: none; overflow-y: auto; flex-grow: 1;">
+                            <div style="margin-bottom: 1rem;">
+                                <label>1. CNN Classification Result</label>
+                                <div class="prediction-gauge-container" style="background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                                    <div class="prediction-details">
+                                        <div class="predicted-label" id="pipe-pred-label" style="font-size: 1.4rem;">lassi</div>
+                                        <div class="confidence-bar-outer" style="height: 6px;">
+                                            <div class="confidence-bar-inner" id="pipe-confidence-bar"></div>
+                                        </div>
+                                        <span class="confidence-text" id="pipe-confidence-text">98.54% Confidence Score</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 1rem;">
+                                <label>2. Log Summary Description (Gemma)</label>
+                                <div class="output-container" id="pipe-summary-box" style="min-height: auto; max-height: 250px; background: rgba(0,0,0,0.15);"></div>
+                            </div>
+                            
+                            <div style="margin-bottom: 1rem;">
+                                <label>3. Safety RAG Advisory Report (Gemma)</label>
+                                <div class="output-container" id="pipe-safety-box" style="min-height: auto; max-height: 300px; background: rgba(0,0,0,0.15);"></div>
+                            </div>
+                            
+                            <div style="margin-bottom: 1rem;">
+                                <label>4. Retrieved Policy References</label>
+                                <div class="citation-container" id="pipe-citations">
+                                    <!-- Rendered dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 4: NGO Recommendation Match Advisor -->
+            <section id="recommendation-tab" class="tab-panel">
+                <div class="header-container">
+                    <h2 class="header-title">NGO Match Advisor</h2>
+                    <p class="header-subtitle">Match food donations with the optimal NGO and generate RAG-grounded match justification paragraphs.</p>
+                </div>
+                
+                <div class="grid-2">
+                    <div class="glass-card">
+                        <h3 class="card-title"><i class="fa-solid fa-circle-nodes"></i> Match Parameters</h3>
+                        
+                        <div class="form-group">
+                            <label for="recommend-ngo-select">Target NGO</label>
+                            <select id="recommend-ngo-select">
+                                <option value="Helping Hands NGO" selected>Helping Hands NGO (Tier 1 - Shelters & Families)</option>
+                                <option value="Robin Hood Army">Robin Hood Army (Tier 1 - Immediate Distribution)</option>
+                                <option value="Food for All Foundation">Food for All Foundation (Tier 2 - Community Kitchens)</option>
+                                <option value="Feed the Needy India">Feed the Needy India (Tier 2 - Underprivileged Care)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="recommend-distance">Distance to Donor (km)</label>
+                            <input type="number" id="recommend-distance" value="2.5" min="0.1" max="50.0" step="0.1">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="recommend-capacity">NGO Available Capacity (kg)</label>
+                            <input type="number" id="recommend-capacity" value="50.0" min="1.0" max="1000.0" step="5.0">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="recommend-rating">NGO Platform Rating (out of 5)</label>
+                            <input type="number" id="recommend-rating" value="4.8" min="1.0" max="5.0" step="0.1">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="recommend-food-details">Food Donation Details</label>
+                            <input type="text" id="recommend-food-details" value="10 portions of chilled Lassi" placeholder="e.g. 50 kg of hot rice and lentils">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="recommend-backend-select">Backend Provider</label>
+                            <select id="recommend-backend-select" onchange="onBackendChange('recommend')">
+                                <option value="gemini" selected>Google Gemini API (Cloud)</option>
+                                <option value="ollama">Ollama (Local Engine)</option>
+                                <option value="huggingface">Hugging Face API (Cloud)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="recommend-model-select">Gemma LLM Model Override</label>
+                            <select id="recommend-model-select" onchange="onModelChange('recommend')">
+                                <option value="gemini-flash-latest" selected>Gemini Flash (Default)</option>
+                                <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                                <option value="gemma-4-26b-a4b-it">Gemma 4 26B</option>
+                                <option value="gemma-4-31b-it">Gemma 4 31B</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" id="recommend-custom-model-group" style="display: none;">
+                            <label for="recommend-custom-model-input">Custom Model Name / ID</label>
+                            <input type="text" id="recommend-custom-model-input" placeholder="e.g. gemma2:2b">
+                        </div>
+
+                        <button type="button" class="btn" id="recommend-submit-btn">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Match Justification
+                        </button>
+                    </div>
+
+                    <div class="chat-container">
+                        <div class="chat-header">
+                            <h3><i class="fa-solid fa-file-invoice"></i> Justification Report</h3>
+                        </div>
+                        <div class="output-container empty" id="recommend-output-box" style="padding: 1.5rem; overflow-y: auto; flex-grow: 1;">
+                            Run matching algorithm to output justification narrative...
+                        </div>
+                        <div class="output-meta" id="recommend-output-meta">
+                            Output format: grounded narrative paragraph
+                        </div>
+                        
+                        <!-- RAG Citations for NGO Policies -->
+                        <div class="citation-container" id="recommend-citations" style="margin-top: 1rem; display: none;">
+                            <!-- Rendered dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 4: RAG Chatbot -->
+            <section id="chatbot-tab" class="tab-panel">
+                <div class="header-container">
+                    <h2 class="header-title">Jivahar FAQ Chatbot Sandbox</h2>
+                    <p class="header-subtitle">Chat with an intelligent RAG model grounded exclusively on the local platform guidelines and PDF knowledge bases.</p>
+                </div>
+                
+                <div class="chat-container">
+                    <div class="chat-messages" id="chat-box">
+                        <div class="chat-message bot">
+                            <div class="message-bubble">
+                                Hello! I am the **Jivahar RAG Advisor**. I can answer any questions regarding our food redistribution logistics, safety standards, or platform rules. What would you like to know?
+                            </div>
+                            <span class="message-time">System Bot</span>
+                        </div>
+                    </div>
+                    
+                    <div class="presets-container" style="margin-bottom: 0.75rem;">
+                        <span class="preset-chip" onclick="loadChatPreset('shelf-life')">What are the food shelf-life constraints?</span>
+                        <span class="preset-chip" onclick="loadChatPreset('ngo')">How are NGOs matched with donations?</span>
+                        <span class="preset-chip" onclick="loadChatPreset('safety')">What are the temperature rules for cooked food?</span>
+                    </div>
+
+                    <div id="chat-custom-model-group" style="display: none; margin-bottom: 0.5rem; width: 100%;">
+                        <input type="text" id="chat-custom-model-input" placeholder="Type custom chat model name (e.g. gemma2:2b or google/gemma-2-2b-it)..." style="padding: 0.5rem 1rem;">
+                    </div>
+
+                    <div class="chat-input-area">
+                        <textarea id="chat-input" placeholder="Type your question about platform guidelines... (Press Enter to send)"></textarea>
+                        <div style="display: flex; align-items: center; padding: 0.25rem;">
+                            <select id="chat-backend-select" style="padding: 0.5rem; width: 130px; margin-right: 0.5rem;" onchange="onBackendChange('chat')">
+                                <option value="gemini" selected>Gemini API</option>
+                                <option value="ollama">Ollama</option>
+                                <option value="huggingface">Hugging Face</option>
+                            </select>
+                            <select id="chat-model-select" style="padding: 0.5rem; width: 140px; margin-right: 0.5rem;" onchange="onModelChange('chat')">
+                                <option value="gemini-flash-latest" selected>Gemini Flash</option>
+                                <option value="gemini-2.0-flash">Gemini 2.0</option>
+                                <option value="gemma-4-26b-a4b-it">Gemma 4 26B</option>
+                                <option value="gemma-4-31b-it">Gemma 4 31B</option>
+                            </select>
+                            <button type="button" class="btn" id="chat-send-btn" style="height: 48px; width: 48px; border-radius: 8px; padding: 0;">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 5: Settings -->
+            <section id="settings-tab" class="tab-panel">
+                <div class="header-container">
+                    <h2 class="header-title">System Settings & Data Ingestion</h2>
+                    <p class="header-subtitle">Check configuration status, model states, and re-index document repositories dynamically.</p>
+                </div>
+                
+                <div class="grid-2">
+                    <div class="glass-card">
+                        <h3 class="card-title"><i class="fa-solid fa-network-wired"></i> Model Status Checks</h3>
+                        
+                        <div class="settings-list">
+                            <div class="setting-row">
+                                <div class="setting-meta">
+                                    <span class="setting-title">Google GenAI Client</span>
+                                    <span class="setting-desc" id="settings-api-desc">API Connection and Credential Key validation status.</span>
+                                </div>
+                                <div class="setting-status">
+                                    <span class="preset-chip" id="settings-api-badge">Pending</span>
+                                </div>
+                            </div>
+                            
+                            <div class="setting-row">
+                                <div class="setting-meta">
+                                    <span class="setting-title">CNN Classifier Model</span>
+                                    <span class="setting-desc" id="settings-cnn-desc">EfficientNet-B3 checkpoint model weights loading status.</span>
+                                </div>
+                                <div class="setting-status">
+                                    <span class="preset-chip" id="settings-cnn-badge">Pending</span>
+                                </div>
+                            </div>
+                            
+                            <div class="setting-row">
+                                <div class="setting-meta">
+                                    <span class="setting-title">FAISS Vector Index Database</span>
+                                    <span class="setting-desc" id="settings-faiss-desc">Semantic search vector storage files existence status.</span>
+                                </div>
+                                <div class="setting-status">
+                                    <span class="preset-chip" id="settings-faiss-badge">Pending</span>
+                                </div>
+                            </div>
+                            
+                            <div class="setting-row">
+                                <div class="setting-meta">
+                                    <span class="setting-title">Ollama Local Engine</span>
+                                    <span class="setting-desc" id="settings-ollama-desc">Local Ollama running instance and installed models list.</span>
+                                </div>
+                                <div class="setting-status">
+                                    <span class="preset-chip" id="settings-ollama-badge">Pending</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="glass-card">
+                        <h3 class="card-title"><i class="fa-solid fa-database"></i> Knowledge Base Ingestion</h3>
+                        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1.5rem;">
+                            The RAG Chatbot compiles answers using references retrieved from platform PDF documents stored in <code>data/knowledge_base/</code>. Rebuild the index if you add new policy files or update existing safety manuals.
+                        </p>
+                        
+                        <div class="output-container empty" id="settings-ingest-log" style="min-height: 160px; font-family: monospace; font-size: 0.8rem; margin-bottom: 1.5rem; line-height: 1.4;">
+                            Ingestion logger console idle...
+                        </div>
+                        
+                        <button type="button" class="btn btn-secondary" id="settings-ingest-btn">
+                            <i class="fa-solid fa-rotate"></i> Rebuild FAISS Vector Index
+                        </button>
+                    </div>
+                </div>
+
+                <div class="glass-card" style="margin-top: 1.5rem;">
+                    <h3 class="card-title"><i class="fa-solid fa-key"></i> Multi-Backend API Configurations</h3>
+                    <div class="grid-3" style="margin-bottom: 0;">
+                        <div class="form-group">
+                            <label for="settings-ollama-url">Ollama Server URL</label>
+                            <input type="text" id="settings-ollama-url" value="http://localhost:11434">
+                        </div>
+                        <div class="form-group">
+                            <label for="settings-hf-token">Hugging Face API Token</label>
+                            <input type="password" id="settings-hf-token" placeholder="Paste hf_... API token here">
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: flex-end;">
+                            <button type="button" class="btn" id="settings-save-btn" style="width: 100%;">
+                                <i class="fa-solid fa-floppy-disk"></i> Save Configurations
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+        </main>
+        
+    </div>
+
+    <!-- Main JavaScript Logic Controller -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

@@ -32,6 +32,13 @@ DOCUMENTS = {
              "1. Foul, sour, or rancid smell. "
              "2. Visual indicators of decay (mold growth, discoloration, slime). "
              "3. Damage to packaging (dents, leaks, broken seals, bulging cans)."),
+            ("5. Allergen Segregation and Declaration Rules",
+             "All donors must declare the presence of major allergens including dairy, peanuts, tree nuts, wheat, soy, eggs, fish, and shellfish. "
+             "Allergen-containing foods must be packed in airtight containers with clear labeling, and physically separated "
+             "during transportation to prevent cross-contact with allergen-free items."),
+            ("6. High-Risk Reheating Policies",
+             "Any redistributed cooked food must be thoroughly reheated to a minimum internal temperature of 74°C (165°F) for at least 15 seconds "
+             "within 2 hours before distribution to beneficiaries. Food must only be reheated once; any leftover reheated food must be composted.")
         ]
     },
     "government_regulations.pdf": {
@@ -51,6 +58,12 @@ DOCUMENTS = {
             ("4. Food Waste Disposal Policies",
              "Surplus food that fails visual inspection must be sent to composting or waste-to-energy facilities. "
              "It is illegal to discard fit-for-compost food into general garbage landfill sites under municipal waste guidelines."),
+            ("5. FSSAI Regulations for Food Donors",
+             "SURPLUS FOOD REGULATIONS specify that donors must verify the food is fresh and hygienic prior to donation. "
+             "Food distribution logs containing preparation dates, batch numbers, temperature history, and donor ids must be maintained for 6 months."),
+            ("6. Tax Deductions for Commercial Donors",
+             "Commercial establishments (supermarkets, wholesale hotels) are eligible for tax deductions on the cost value of donated inventory "
+             "under Section 80G, provided the donation is routed through certified non-profit entities matching the Jivahar platform database.")
         ]
     },
     "ngo_policies.pdf": {
@@ -71,6 +84,14 @@ DOCUMENTS = {
              "The platform assigns priority matching to NGOs with high ratings (above 4.0). "
              "Ratings are calculated based on response speed, successful delivery logs, and food safety reviews "
              "submitted by volunteers and donors."),
+            ("5. Emergency Priority Allocations for Child Care Shelters",
+             "Dairy, fresh baby food, and pasteurized milk requests are granted tier-1 priority. "
+             "These perishable donations are instantly matched to child care shelters and orphanages located within a 3 km proximity, "
+             "bypassing standard volunteer queues to enable direct emergency courier dispatch."),
+            ("6. Large Scale Donation Logistics",
+             "Food donations exceeding 100 kg must be routed strictly to regional food banks. "
+             "Such matches trigger a volunteer transport dispatch alert, requiring a team of at least 3 volunteers "
+             "equipped with food-grade insulated carrying crates to manage the logistics.")
         ]
     },
     "platform_faqs.pdf": {
@@ -88,6 +109,12 @@ DOCUMENTS = {
             ("Q4: How do NGOs claim food?",
              "NGOs set their preferences (e.g., veg/non-veg, capacity limits). When a donation matches their profile, "
              "the system suggests the match, and the NGO has 15 minutes to accept the recommendation before it is routed to another NGO."),
+            ("Q5: What happens when an NGO rating drops below 4.0?",
+             "NGOs with a rating below 4.0 are put on a probationary list. They receive lower matching priority "
+             "and are restricted to receiving non-perishable dry rations until they complete a food safety refresher course."),
+            ("Q6: How does the system handle high-priority infant milk requests?",
+             "Infant milk requests trigger an instant priority matching algorithm. The system matches the request with any nearby dairy donor "
+             "and dispatches a dedicated volunteer via high-speed dispatch route, enforcing a strict 30-minute delivery SLA.")
         ]
     }
 }

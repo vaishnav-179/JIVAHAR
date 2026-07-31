@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = Field(..., description="Google AI Studio API Key")
     
     # Gemma / Gemini LLM settings
-    GEMINI_MODEL: str = Field("gemini-2.5-flash", description="Gemini/Gemma Model Name")
+    GEMINI_MODEL: str = Field("gemini-flash-latest", description="Gemini/Gemma Model Name")
     
     # Embeddings model for RAG
     EMBEDDING_MODEL: str = Field("all-MiniLM-L6-v2", description="Local sentence-transformers embedding model name")
@@ -32,6 +32,11 @@ class Settings(BaseSettings):
     
     # Logging configuration
     LOG_LEVEL: str = Field("INFO", description="Console Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)")
+
+    # Unified Multi-backend LLM settings
+    LLM_BACKEND: str = Field("gemini", description="LLM Backend: gemini, ollama, huggingface")
+    OLLAMA_HOST: str = Field("http://localhost:11434", description="Ollama API server URL")
+    HF_API_KEY: str = Field("", description="Hugging Face API key (optional)")
 
     # Load settings from .env file in the base directory
     model_config = SettingsConfigDict(
@@ -44,11 +49,9 @@ class Settings(BaseSettings):
     @classmethod
     def validate_api_key(cls, v: str) -> str:
         v_stripped = v.strip()
-        if not v_stripped or v_stripped == "your_google_ai_studio_api_key_here":
-            raise ValueError(
-                "GEMINI_API_KEY has not been configured in the '.env' file. "
-                "Please obtain an API key from Google AI Studio and configure GEMINI_API_KEY."
-            )
+        if not v_stripped or v_stripped == "your_google_ai_studio_api_key_here" or v_stripped == "mock_key_for_testing":
+            # Return placeholder so that local run modes (Ollama/HuggingFace) are not blocked from starting
+            return "mock_key_for_testing"
         return v_stripped
 
     @field_validator("CNN_MODEL_PATH")

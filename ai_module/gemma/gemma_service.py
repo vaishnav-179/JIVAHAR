@@ -38,12 +38,13 @@ class GemmaService:
                 "API calls will fail until a valid key is set in .env."
             )
             
+        self.client = None
         try:
-            # Initialize the modern Google GenAI Client
-            self.client = genai.Client(api_key=self.api_key)
+            # Initialize the modern Google GenAI Client (only if key seems valid)
+            if self.api_key and self.api_key != "mock_key_for_testing":
+                self.client = genai.Client(api_key=self.api_key)
         except Exception as e:
             logger.error(f"Failed to initialize GenAI Client: {e}")
-            raise GemmaConfigurationError(f"Client initialization failed: {e}")
 
     @retry(
         reraise=True,
@@ -80,6 +81,14 @@ class GemmaService:
             config=config
         )
         return response
+    def _format_gemma_chat_prompt(self, prompt: str, system_instruction: Optional[str] = None) -> str:
+        """Wraps prompt in instruction-tuned Gemma template format."""
+        formatted = ""
+        if system_instruction:
+            formatted += f"<start_of_turn>user\n{system_instruction}\n\n{prompt}<end_of_turn>\n<start_of_turn>model\n"
+        else:
+            formatted += f"<start_of_turn>user\n{prompt}<end_of_turn>\n<start_of_turn>model\n"
+        return formatted
 
     def generate_response(
         self,
@@ -107,23 +116,33 @@ class GemmaService:
         if not prompt or not prompt.strip():
             raise ValueError("Prompt cannot be empty.")
 
-        # Fail-fast validation if still configured with default placeholder
-        if self.api_key == "mock_key_for_testing":
-            raise GemmaConfigurationError(
-                "Cannot perform API operations with a mock API key. "
-                "Please configure a valid GEMINI_API_KEY in your local .env file."
-            )
+        # Determine backend to use
+        backend = settings.LLM_BACKEND.lower()
+        if ":" in self.model_name:
+            backend = "ollama"
+        elif "/" in self.model_name:
+            backend = "huggingface"
 
-        try:
-            response = self._call_api_with_retry(
-                prompt=prompt,
-                system_instruction=system_instruction,
-                temperature=temperature,
-                max_output_tokens=max_output_tokens
-            )
-            
-            if not response or not response.text:
-                raise GemmaAPIError("Received an empty response from the AI API.")
+        is_gemma_model = "gemma" in self.model_name.lower()
+        
+        # Pre-format prompt for Gemma model structure if applicable
+        active_prompt = prompt
+        active_system = system_instruction
+        if is_gemma_model:
+            active_prompt = self._format_gemma_chat_prompt(prompt, system_instruction)
+            active_system = None  # Injected directly in template prompt
+
+        if backend == "ollama":
+            try:
+                import requests
+                url = f"{settings.OLLAMA_HOST}/api/generate"
+                payload = {
+                    "model": self.model_name,
+                    "prompt": active_prompt,
+                    "stream": False
+                }
+                if active_system:
+                    payload["system"] = active_system
                 
             return response.text
             
