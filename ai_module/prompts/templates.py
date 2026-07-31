@@ -184,7 +184,8 @@ def format_recommendation_explanation(
     distance_km: float, 
     capacity_kg: float, 
     rating: float, 
-    food_details: str
+    food_details: str,
+    context: Optional[str] = None
 ) -> tuple[str, str]:
     """Formats system and user prompts for matching explanation."""
     user_prompt = RECOMMENDATION_USER_TEMPLATE.format(
@@ -194,4 +195,12 @@ def format_recommendation_explanation(
         rating=rating,
         food_details=food_details
     )
+    if context:
+        user_prompt = (
+            f"--- NGO Matching Policies & Guidelines Context ---\n"
+            f"{context}\n"
+            f"--------------------------------------------------\n\n"
+            f"{user_prompt}\n"
+            f"Ensure your match justification paragraph explicitly references any relevant proximity scopes or tier criteria from the context if they apply."
+        )
     return RECOMMENDATION_SYSTEM, user_prompt

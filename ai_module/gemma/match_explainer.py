@@ -1,3 +1,4 @@
+from typing import Optional
 import logging
 from ai_module.gemma.gemma_service import GemmaService
 from ai_module.prompts import format_recommendation_explanation
@@ -19,7 +20,8 @@ class NGORecommendationExplainer:
         distance_km: float, 
         capacity_kg: float, 
         rating: float, 
-        food_details: str
+        food_details: str,
+        context: Optional[str] = None
     ) -> str:
         """
         Generates a professional justification paragraph explaining why the NGO was matched.
@@ -53,7 +55,8 @@ class NGORecommendationExplainer:
             distance_km=distance_km,
             capacity_kg=capacity_kg,
             rating=rating,
-            food_details=food_details
+            food_details=food_details,
+            context=context
         )
         
         # 2. Run Gemma inference

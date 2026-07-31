@@ -124,7 +124,8 @@ class JivaharAIFacade:
         distance_km: float, 
         capacity_kg: float, 
         rating: float, 
-        food_details: str
+        food_details: str,
+        context: Optional[str] = None
     ) -> str:
         """
         Writes a justification paragraph explaining why the NGO was matched to this donation.
@@ -134,7 +135,8 @@ class JivaharAIFacade:
             distance_km=distance_km,
             capacity_kg=capacity_kg,
             rating=rating,
-            food_details=food_details
+            food_details=food_details,
+            context=context
         )
 
     def ingest_knowledge_base(self):
